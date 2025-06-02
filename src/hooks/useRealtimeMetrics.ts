@@ -1,10 +1,13 @@
-
 import { useState, useEffect } from 'react';
 
 interface Metrics {
   activeCalls: number;
-  successRate: number;
-  avgResponse: number;
+  dialLevel: number;
+  dialableLeads: number;
+  currentTime: string;
+  totalCallRinging: number;
+  callsWaitingForAgents: number;
+  agentsInCall: number;
   totalAgents: number;
 }
 
@@ -28,11 +31,25 @@ interface Activity {
   duration?: number;
 }
 
+const formatISTTime = () => {
+  const now = new Date();
+  const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+  const istTime = new Date(now.getTime() + istOffset);
+  return istTime.toLocaleTimeString('en-IN', { 
+    hour12: false,
+    timeZone: 'Asia/Kolkata'
+  });
+};
+
 export const useRealtimeMetrics = () => {
   const [metrics, setMetrics] = useState<Metrics>({
     activeCalls: 24,
-    successRate: 96,
-    avgResponse: 2.3,
+    dialLevel: 3,
+    dialableLeads: 1247,
+    currentTime: formatISTTime(),
+    totalCallRinging: 8,
+    callsWaitingForAgents: 5,
+    agentsInCall: 4,
     totalAgents: 6,
   });
 
@@ -141,12 +158,15 @@ export const useRealtimeMetrics = () => {
   useEffect(() => {
     // Simulate real-time updates
     const interval = setInterval(() => {
-      // Update metrics
+      // Update current time every second
       setMetrics(prev => ({
         ...prev,
+        currentTime: formatISTTime(),
         activeCalls: Math.max(15, prev.activeCalls + (Math.random() > 0.5 ? 1 : -1)),
-        successRate: Math.max(90, Math.min(100, prev.successRate + (Math.random() - 0.5) * 2)),
-        avgResponse: Math.max(1.0, prev.avgResponse + (Math.random() - 0.5) * 0.2),
+        dialableLeads: Math.max(1000, prev.dialableLeads + (Math.random() > 0.7 ? -1 : 0)),
+        totalCallRinging: Math.max(0, prev.totalCallRinging + (Math.random() > 0.6 ? 1 : -1)),
+        callsWaitingForAgents: Math.max(0, prev.callsWaitingForAgents + (Math.random() > 0.5 ? 1 : -1)),
+        agentsInCall: Math.max(0, Math.min(prev.totalAgents, prev.agentsInCall + (Math.random() > 0.5 ? 1 : -1))),
       }));
 
       // Occasionally add new activities
@@ -177,7 +197,7 @@ export const useRealtimeMetrics = () => {
           lastActivity: Math.random() > 0.9 ? new Date() : agent.lastActivity,
         })));
       }
-    }, 5000);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, []);
